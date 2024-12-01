@@ -3,8 +3,9 @@ Palomino.Character = Palomino.Character or {}
 
 local CreateCharacterPanel = {}
 
-CreateCharacterPanel.MAT_BG = PUI.Material( "palomino/panels/createcharacter/bg_test_3.png" )
+CreateCharacterPanel.MAT_BG = PUI.Material( "palomino/panels/createcharacter/bg_test_6.png" )
 CreateCharacterPanel.MAT_OVERLAY = PUI.Material( "palomino/panels/createcharacter/overlay_test_2.png" )
+CreateCharacterPanel.CREATE_ANIMATION_DURATION = 1
 
 function CreateCharacterPanel:Init()
     self:SetSize( ScrW(), ScrH() )
@@ -23,13 +24,16 @@ function CreateCharacterPanel:Init()
     self._dCloseButton.Paint = function( _, w, h )
         -- draw.RoundedBox( 0, 0, 0, w, h, Color( 0, 0, 0, 200 ) )
     end
+    self._dCloseButton:SetZPos( 100 )
 
     -- DLeftPanel
     self._dLeftPanel = vgui.Create( "DPanel", self )
-    self._dLeftPanel:SetSize( self:GetWide() * 0.22, self:GetTall() * 0.8 )
+    self._dLeftPanel:SetSize( self:GetWide() * 0.25, self:GetTall() * 0.8 )
     self._dLeftPanel:SetPos( self:GetWide() * 0.05, self:GetTall() * 0.1 )
-    self._dLeftPanel.Paint = function( _, w, h )
+    self._dLeftPanel._nInitX, self._dLeftPanel._nInitY = self._dLeftPanel:GetPos()
+    self._dLeftPanel.Paint = function( this, w, h )
         -- draw.RoundedBox( 0, 0, 0, w, h, Color( 0, 0, 0, 200 ) )
+        -- this:SetAlpha( 128 )
     end
 
     -- DIconLayout
@@ -52,6 +56,7 @@ function CreateCharacterPanel:Init()
 
     self._dFirstNameEntry = self._dIconLayout:Add( "PTextEntry" )
     self._dFirstNameEntry:SetWide( self._dIconLayout:GetWide() )
+    self._dFirstNameEntry:SetAllowedChars( "%a" )
 
     -- Last Name
     self._dLastNameLabel = self._dIconLayout:Add( "PLabel" )
@@ -60,6 +65,7 @@ function CreateCharacterPanel:Init()
 
     self._dLastNameEntry = self._dIconLayout:Add( "PTextEntry" )
     self._dLastNameEntry:SetWide( self._dIconLayout:GetWide() )
+    self._dLastNameEntry:SetAllowedChars( "%a-" )
 
     -- Sex
     self._dSexLabel = self._dIconLayout:Add( "PLabel" )
@@ -72,7 +78,7 @@ function CreateCharacterPanel:Init()
     -- self._dSexEntry:AddOption( "NONBINARY" )
     self._dSexEntry:AddOption( "FEMALE" )
     self._dSexEntry.OnUpdate = function( this, sSex, nIndex )
-        if nIndex == 1 then
+        if sSex == "MALE" then
             self._dModelEntry:SetOptions({
                 "MALE_01",
                 "MALE_02",
@@ -86,7 +92,7 @@ function CreateCharacterPanel:Init()
             })
 
             self._dModelEntry:SetSelectedIndex( 1 )
-        elseif nIndex == 2 then
+        elseif sSex == "FEMALE" then
             self._dModelEntry:SetOptions({
                 "FEMALE_01",
                 "FEMALE_02",
@@ -151,27 +157,47 @@ function CreateCharacterPanel:Init()
     self._dCreateButton:SetWide( self._dIconLayout:GetWide() )
     self._dCreateButton:SetLabel( "CREATE CHARACTER" )
     self._dCreateButton:Dock( BOTTOM )
+    self._dCreateButton.DoClick = function()
+        self:DoCreateAnimation()
+    end
 
 
 
     -- DModelPanel
     self._dModelPanel1 = vgui.Create( "Palomino.CreateCharacter.Model", self )
-    self._dModelPanel1:SetSize( self:GetWide() * 0.5, self:GetTall() * 1 )
+    self._dModelPanel1:SetSize( self:GetTall() * 0.9, self:GetTall() )
     self._dModelPanel1:SetPos( self:GetWide() * 0.43, 0 )
     self._dModelPanel1:SetModel( "models/player/group01/male_01.mdl" )
-    self._dModelPanel1:SetDisplayed( true )
+    self._dModelPanel1:SetDisplayed( true, true )
 
     self._dModelPanel2 = vgui.Create( "Palomino.CreateCharacter.Model", self )
-    self._dModelPanel2:SetSize( self:GetWide() * 0.5, self:GetTall() * 1 )
+    self._dModelPanel2:SetSize( self:GetTall() * 0.9, self:GetTall() )
     self._dModelPanel2:SetPos( self:GetWide() * 0.43, 0 )
     self._dModelPanel2:SetModel( "models/player/group01/male_01.mdl" )
-    self._dModelPanel2:SetDisplayed( false )
+    self._dModelPanel2:SetDisplayed( false, true )
+
+    -- self._dModelPanel1._nAnimationStart = 0
+    -- self._dModelPanel2._nAnimationStart = 0
+
+
+
+    -- Internal Vars
+    self._bCreated = false
+    self._nCreateAnimationStart = false
+    self._nInit = false
 end
 
 function CreateCharacterPanel:Paint()
     surface.SetDrawColor( 255, 255, 255 )
     surface.SetMaterial( CreateCharacterPanel.MAT_BG )
-    surface.DrawTexturedRect( 0, 0, self:GetWide(), self:GetTall() )
+    -- TIL my monitor isnt 21:9...
+    local nWidth = 43 / 18 * ScrH()
+    surface.DrawTexturedRect( ( ScrW() - nWidth ) / 2, 0, nWidth, ScrH() )
+
+    if self._bCreated then
+        surface.SetDrawColor( 0, 0, 0, 255 * self._nCreateAnimationProgress )
+        surface.DrawRect( 0, 0, self:GetWide(), self:GetTall() )
+    end
 
     -- PUI.StartOverlay()
     --     surface.SetDrawColor( 255, 255, 255, 255 )
@@ -180,21 +206,65 @@ function CreateCharacterPanel:Paint()
     -- PUI.EndOverlay()
 end
 
+-- FUN FACT: I fucked them up. The active panel is the one that is not displayed.
+-- Sorry for the confusion <3
+function CreateCharacterPanel:GetActiveModelPanel()
+    return self._dModelPanel1:GetDisplayed() and self._dModelPanel1 or self._dModelPanel2
+end
+
+function CreateCharacterPanel:GetInactiveModelPanel()
+    return self._dModelPanel1:GetDisplayed() and self._dModelPanel2 or self._dModelPanel1
+end
+
 function CreateCharacterPanel:ChangeModel(sModel)
-    local activePanel = self._dModelPanel1:GetDisplayed() and self._dModelPanel1 or self._dModelPanel2
-    local inactivePanel = self._dModelPanel1:GetDisplayed() and self._dModelPanel2 or self._dModelPanel1
+    local dActivePanel = self:GetActiveModelPanel()
+    local dInactivePanel = self:GetInactiveModelPanel()
 
-    activePanel._nSequence = inactivePanel._nSequence
+    dActivePanel._nSequence = dInactivePanel._nSequence
 
-    activePanel:SetZPos(1)
-    inactivePanel:SetZPos(0)
+    dActivePanel:SetZPos(1)
+    dInactivePanel:SetZPos(0)
 
     -- Set the new model on the inactive panel
-    activePanel:SetModel(sModel)
+    dActivePanel:SetModel(sModel)
 
     -- Start the transition
-    activePanel:SetDisplayed(false)
-    inactivePanel:SetDisplayed(true)
+    if not self._nInit then
+        self._nInit = true
+    else
+        dActivePanel:SetDisplayed(false)
+        dInactivePanel:SetDisplayed(true)
+    end
+end
+
+function CreateCharacterPanel:Think()
+    if self._bCreated then
+        self._nCreateAnimationProgress = math.ease.OutQuad(math.Clamp((CurTime() - self._nCreateAnimationStart) / self.CREATE_ANIMATION_DURATION, 0, 1))
+        self._dLeftPanel:SetPos( self._dLeftPanel._nInitX - ( self._nCreateAnimationProgress * ( self._dLeftPanel._nInitX + self._dLeftPanel:GetWide() ) ), self._dLeftPanel._nInitY )
+        self._dLeftPanel:SetAlpha( 255 * (1 - self._nCreateAnimationProgress) )
+
+        if self._nCreateAnimationProgress >= 1 and not self._bCreateAnimationComplete then
+            self._bCreateAnimationComplete = true
+
+            local dActivePanel = self:GetActiveModelPanel()
+            local dInactivePanel = self:GetInactiveModelPanel()
+
+            dActivePanel.Entity:SetModel( dInactivePanel.Entity:GetModel() )
+
+            -- self:GetActiveModelPanel():SetDisplayed( true )
+            -- self:GetInactiveModelPanel():SetDisplayed( true )
+            dActivePanel._bDeleteNonOverlay = true
+            dActivePanel:SetDisplayed( false )
+            dInactivePanel:SetDisplayed( true )
+
+            -- self:GetInactiveModelPanel():SetDisplayed( true )
+        end
+    end
+end
+
+function CreateCharacterPanel:DoCreateAnimation()
+    self._bCreated = true
+    self._nCreateAnimationStart = CurTime()
 end
 
 vgui.Register( "Palomino.CreateCharacter", CreateCharacterPanel, "DFrame" )
@@ -202,12 +272,12 @@ vgui.Register( "Palomino.CreateCharacter", CreateCharacterPanel, "DFrame" )
 -- @CreateCharacter.Model
 
 local CreateCharacterModelPanel = {}
-CreateCharacterModelPanel.ANIMATION_DURATION = 1.2
+CreateCharacterModelPanel.ANIMATION_DURATION = 1
 CreateCharacterModelPanel.OVERLAY_HEIGHT = 500  -- Height of the overlay band at transition edge
 CreateCharacterModelPanel.Sequences = {
     "pose_standing_02",
     "pose_standing_01",
-    "pose_standing_04",
+    -- "pose_standing_04",
     "idle_all_scared",
     "idle_all_01",
 }
@@ -245,9 +315,9 @@ function CreateCharacterModelPanel:DrawModel()
     render.SetStencilEnable(true)
 
     -- Calculate animation progress
-    local animationProgress = math.ease.OutQuint(math.Clamp((CurTime() - self._nAnimationStart) / self.ANIMATION_DURATION, 0, 1))
+    local nAnimationProgress = math.ease.OutQuad(math.Clamp((CurTime() - self._nAnimationStart) / self.ANIMATION_DURATION, 0, 1))
     -- Adjust Y position to start above screen and end below it
-    local nY = (0 - self.OVERLAY_HEIGHT) + ((ScrH() + self.OVERLAY_HEIGHT * 2) * animationProgress)
+    local nY = (0 - self.OVERLAY_HEIGHT) + ((ScrH() + self.OVERLAY_HEIGHT * 2) * nAnimationProgress)
 
     -- Step 0: Write the outer mask to bit 4
     render.SetStencilCompareFunction(STENCIL_ALWAYS)
@@ -262,8 +332,13 @@ function CreateCharacterModelPanel:DrawModel()
             surface.SetDrawColor(255, 255, 255, 255)
             surface.DrawRect(0, nY, self:GetWide(), ScrH() - nY)
         else
-            surface.SetDrawColor(255, 255, 255, 255)
-            surface.DrawRect(0, 0, self:GetWide(), nY)
+            if self._bDeleteNonOverlay then
+                surface.SetDrawColor(255, 255, 255, 255)
+                surface.DrawRect(0, nY - self.OVERLAY_HEIGHT, self:GetWide(), nY)
+            else
+                surface.SetDrawColor(255, 255, 255, 255)
+                surface.DrawRect(0, 0, self:GetWide(), nY)
+            end
         end
     cam.End2D()
     render.OverrideColorWriteEnable(false)
@@ -275,7 +350,10 @@ function CreateCharacterModelPanel:DrawModel()
     render.SetStencilWriteMask(1)
     render.SetStencilTestMask(4)
 
-    eEntity:DrawModel()
+    -- if ( ( not self:GetParent()._bCreated ) or not self:GetDisplayed() ) or not self._bKeepAlive then
+        -- eEntity:SetupBones()
+        eEntity:DrawModel()
+    -- end
 
     cam.Start2D()
         -- Step 2: Write sliding rectangle to bit 2 where bits 4 and 1 exist
@@ -331,13 +409,20 @@ function CreateCharacterModelPanel:DrawModel()
     render.SetBlend(1)
 end
 
-function CreateCharacterModelPanel:SetDisplayed(bDisplayed)
+function CreateCharacterModelPanel:SetDisplayed(bDisplayed, bIgnoreAnimation)
     self._bDisplayed = bDisplayed
-    self._nAnimationStart = CurTime()
+
+    if not bIgnoreAnimation then
+        self._nAnimationStart = CurTime()
+    end
 end
 
 function CreateCharacterModelPanel:LayoutEntity( eEntity )
-    eEntity:SetSequence( eEntity:LookupSequence( self.Sequences[ self._nSequence ] ) )
+    if self:GetParent()._bCreated then
+        eEntity:SetSequence( eEntity:LookupSequence( "pose_standing_04" ) )
+    else
+        eEntity:SetSequence( eEntity:LookupSequence( self.Sequences[ self._nSequence ] ) )
+    end
 
     local vHeadPos = self.Entity:GetBonePosition(self.Entity:LookupBone("ValveBiped.Bip01_Head1"))
     local vSpinePos = self.Entity:GetBonePosition(self.Entity:LookupBone("ValveBiped.Bip01_Spine"))

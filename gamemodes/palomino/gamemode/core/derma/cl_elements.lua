@@ -1,5 +1,3 @@
-PUI = PUI or {}
-
 -- @PHeader
 
 local PHeader = {}
@@ -39,7 +37,9 @@ vgui.Register( "PHeader", PHeader, "DPanel" )
 local PCheckbox = {}
 
 PCheckbox.MAT_DEFAULT = PUI.Material( "palomino/pui/pcheckbox_unchecked.png", "" )
-PCheckbox.MAT_CHECKED = PUI.Material( "palomino/pui/pcheckbox_checked.png", "" )
+PCheckbox.MAT_CHECKED = PUI.Material( "palomino/pui/pcheckbox_checked_test_2.png", "" )
+PCheckbox.DEFAULT_ALPHA = 32
+PCheckbox.DEFAULT_ALPHA_HOVERED = 64
 
 AccessorFunc( PCheckbox, "_bChecked", "Checked" )
 AccessorFunc( PCheckbox, "_sLabel", "Label", FORCE_STRING )
@@ -58,12 +58,13 @@ end
 
 function PCheckbox:Paint( nWidth, nHeight )
     if self:GetChecked() then
+        surface.SetDrawColor( 255, 255, 255, 255 )
         surface.SetMaterial( PCheckbox.MAT_CHECKED )
     else
+        surface.SetDrawColor( 255, 255, 255, self:IsHovered() and PCheckbox.DEFAULT_ALPHA_HOVERED or PCheckbox.DEFAULT_ALPHA )
         surface.SetMaterial( PCheckbox.MAT_DEFAULT )
     end
 
-    surface.SetDrawColor( 255, 255, 255, 255 )
     surface.DrawTexturedRect( 0, 0, nHeight, nHeight )
 
     -- @TODO: Scale
@@ -360,7 +361,7 @@ function PArrowSelector:Init()
         end
 
         self._nSelectTime = CurTime()
-        self:OnUpdate( self._nSelectedIndex )
+        self:OnUpdate( self.tOptions[self._nSelectedIndex], self._nSelectedIndex )
     end
 
     self._dArrowRight = vgui.Create( "DButton", self )
@@ -462,6 +463,8 @@ PTextEntry.MAT_SELECTED = PUI.Material( "palomino/pui/textentry_test_4_selected.
 PTextEntry.TRANSITION_TIME = 0.15
 PTextEntry.DEFAULT_ALPHA = 32
 
+AccessorFunc( PTextEntry, "_sAllowedChars", "AllowedChars" )
+
 function PTextEntry:Init()
     self:SetTall( PTextEntry.MAT_DEFAULT:Height() )
     self:SetCursor( "beam" )
@@ -523,11 +526,19 @@ function PTextEntry:Init()
     self._dTextEntry.OnChange = function( this )
         -- Check if value of length is greater than the width of the text entry
         local sText = this:GetValue()
+        local nCaretPos = this:GetCaretPos()
 
         if #sText > self:GetMaxChars() then
             this:SetText( sText:sub( 1, self:GetMaxChars() ) )
-            this:SetCaretPos( #sText )
         end
+
+        if self:GetAllowedChars() then
+            this:SetText( string.gsub( this:GetValue(), "[^" .. self:GetAllowedChars() .. "]", "" ) )
+        end
+
+        this:SetCaretPos( math.min( nCaretPos, self:GetMaxChars() ) )
+
+        self:OnUpdate( this:GetValue() )
     end
 end
 
@@ -588,6 +599,10 @@ function PTextEntry:Paint( nWidth, nHeight )
             PUI.DrawUVElement( PTextEntry.MAT_DEFAULT, nWidth, self.DEFAULT_ALPHA )
         end
     end
+end
+
+function PTextEntry:OnUpdate( sValue )
+    -- Override
 end
 
 vgui.Register( "PTextEntry", PTextEntry, "DButton" )
