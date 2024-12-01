@@ -1,0 +1,7 @@
+*
+
+!gamemodes/
+!gamemodes/palomino/
+!addons/
+!lua/bin/
+!.gitignore
