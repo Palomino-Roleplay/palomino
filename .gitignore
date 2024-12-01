@@ -2,6 +2,13 @@
 
 !gamemodes/
 !gamemodes/palomino/
+!gamemodes/palomino/**
+
 !addons/
+!addons/**
+
+!lua/
 !lua/bin/
+!lua/bin/**
+
 !.gitignore

@@ -1,0 +1,10 @@
+{
+    "server_puid": "srvr_a55f13ecfb314367828582733db7237f",
+
+    "api": {
+        "secret": "5fd6b12f5e51643c4973ff17d6674154d0705112f1c542310c1f6fda55034d48",
+
+        "ws_url": "ws://loopback.gmod:3000",
+        "rest_url": "http://loopback.gmod:3000"
+    }
+}

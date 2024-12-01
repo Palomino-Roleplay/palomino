@@ -1,0 +1,8 @@
+"sandbox"
+{
+	"base"		"sandbox"
+	"title"		"Palomino"
+	"category"	"rp"
+	"maps"		"^rp_"
+	"menusystem"	"1"
+}
