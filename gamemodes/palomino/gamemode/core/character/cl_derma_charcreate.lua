@@ -352,10 +352,28 @@ function CreateCharacterModelPanel:DrawModel()
 
     -- if ( ( not self:GetParent()._bCreated ) or not self:GetDisplayed() ) or not self._bKeepAlive then
         -- eEntity:SetupBones()
-        eEntity:DrawModel()
+    eEntity:DrawModel()
     -- end
 
+    render.SetStencilCompareFunction(STENCIL_LESSEQUAL)
+    render.SetStencilPassOperation(STENCIL_KEEP)
+    render.SetStencilReferenceValue(1)  -- Changed to 1 to match where model was drawn
+    render.SetStencilTestMask(1)  -- Changed to 1 to only test for model's bit
+
+
+
     cam.Start2D()
+        -- Step 1.5: Ligten up the model a bit
+        render.SetStencilCompareFunction(STENCIL_EQUAL)
+        render.SetStencilPassOperation(STENCIL_KEEP)
+        render.SetStencilReferenceValue(5)
+        render.SetStencilTestMask(5)
+
+        PUI.StartOverlay()
+            surface.SetDrawColor(225, 225, 225, 255)
+            surface.DrawRect(0, 0, self:GetWide(), self:GetTall())
+        PUI.EndOverlay()
+
         -- Step 2: Write sliding rectangle to bit 2 where bits 4 and 1 exist
         render.SetStencilCompareFunction(STENCIL_EQUAL)
         render.SetStencilPassOperation(STENCIL_REPLACE)
