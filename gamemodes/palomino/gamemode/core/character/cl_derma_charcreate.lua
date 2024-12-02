@@ -306,8 +306,6 @@ end
 function CreateCharacterModelPanel:DrawModel()
     local eEntity = self.Entity
 
-    render.SetModelLighting(0, 1, 1, 1)
-
     render.SetStencilWriteMask(0xFF)
     render.SetStencilTestMask(0xFF)
     render.ClearStencil()
@@ -318,6 +316,12 @@ function CreateCharacterModelPanel:DrawModel()
     local nAnimationProgress = math.ease.OutQuad(math.Clamp((CurTime() - self._nAnimationStart) / self.ANIMATION_DURATION, 0, 1))
     -- Adjust Y position to start above screen and end below it
     local nY = (0 - self.OVERLAY_HEIGHT) + ((ScrH() + self.OVERLAY_HEIGHT * 2) * nAnimationProgress)
+
+    if self:GetParent()._bCreated then
+        self:SetDirectionalLight(BOX_FRONT, (PUI.WHITE:ToVector() * (1 - self:GetParent()._nCreateAnimationProgress)):ToColor())
+    else
+        self:SetDirectionalLight(BOX_FRONT, (PUI.WHITE:ToVector() * 1):ToColor())
+    end
 
     -- Step 0: Write the outer mask to bit 4
     render.SetStencilCompareFunction(STENCIL_ALWAYS)
