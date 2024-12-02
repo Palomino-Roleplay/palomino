@@ -1,0 +1,10 @@
+{
+    "server_puid": "gmsv_abc123",
+
+    "api": {
+        "secret": "aaaabbbbccccdddd",
+
+        "ws_url": "ws://loopback.gmod:3000",
+        "rest_url": "http://loopback.gmod:3000"
+    }
+}
