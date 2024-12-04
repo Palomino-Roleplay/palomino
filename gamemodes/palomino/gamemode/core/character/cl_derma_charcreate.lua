@@ -286,7 +286,7 @@ function CreateCharacterModelPanel:Init()
     self:SetFOV(6)
     self._nSequence = 1
     self._nAnimationStart = 0
-    
+
     -- Set up lighting
     self:SetDirectionalLight(BOX_TOP, (Color(71, 172, 255):ToVector() * 1):ToColor())
     self:SetDirectionalLight(BOX_BACK, (Color(0, 0, 0):ToVector() * 1):ToColor())
@@ -394,8 +394,8 @@ function CreateCharacterModelPanel:DrawModel()
         end
 
         -- Step 3: Draw overlay where all bits exist
-        render.SetStencilCompareFunction(STENCIL_EQUAL)
-        render.SetStencilPassOperation(STENCIL_KEEP)
+        render.SetStencilCompareFunction( STENCIL_EQUAL )
+        render.SetStencilPassOperation( STENCIL_KEEP )
         render.SetStencilReferenceValue(7)
         render.SetStencilTestMask(7)
 
@@ -416,8 +416,8 @@ function CreateCharacterModelPanel:DrawModel()
     cam.End2D()
 
     -- Step 4: Draw wireframe in the transition band
-    render.SetStencilCompareFunction(STENCIL_EQUAL)
-    render.SetStencilPassOperation(STENCIL_KEEP)
+    render.SetStencilCompareFunction( STENCIL_EQUAL )
+    render.SetStencilPassOperation( STENCIL_KEEP )
     render.SetStencilReferenceValue(7)
     render.SetStencilTestMask(7)
 
@@ -446,10 +446,10 @@ function CreateCharacterModelPanel:LayoutEntity( eEntity )
         eEntity:SetSequence( eEntity:LookupSequence( self.Sequences[ self._nSequence ] ) )
     end
 
-    local vHeadPos = self.Entity:GetBonePosition(self.Entity:LookupBone("ValveBiped.Bip01_Head1"))
-    local vSpinePos = self.Entity:GetBonePosition(self.Entity:LookupBone("ValveBiped.Bip01_Spine"))
-    self:SetLookAt( vSpinePos-Vector(0, 0, -8))
-    self:SetCamPos( vSpinePos-Vector(-90 * 4, -50 * 4, 0))
+    local vHeadPos = self.Entity:GetBonePosition( self.Entity:LookupBone( "ValveBiped.Bip01_Head1" ) )
+    local vSpinePos = self.Entity:GetBonePosition( self.Entity:LookupBone( "ValveBiped.Bip01_Spine" ) )
+    self:SetLookAt( vSpinePos - Vector( 0, 0, -8 ) )
+    self:SetCamPos( vSpinePos - Vector( -90 * 4, -50 * 4, 0 ) )
     self.Entity:SetEyeTarget( vHeadPos + Vector( 16, 1, 0 ) )
 end
 
@@ -465,7 +465,9 @@ vgui.Register( "Palomino.CreateCharacter.Model", CreateCharacterModelPanel, "DMo
 
 
 
-concommand.Add( "prp_createcharacter", function()
+concommand.Add( "palomino_createcharacter", function()
+    if not LocalPlayer():IsDeveloper() then return end
+
     if IsValid( Palomino.Character.Panel ) then
         Palomino.Character.Panel:Remove()
         Palomino.Character.Panel = nil
